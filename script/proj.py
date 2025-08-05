@@ -24,7 +24,7 @@ class EDA:
         self.file = None
 
     def clean(self):
-        filepath = r"D:\Bilal folder\AIML\project\bank.csv"
+        filepath = r"bank.csv"  # add file path
 
         if os.path.isfile(filepath):
             try:
@@ -220,3 +220,4 @@ class stream(ML):
 # ---------- RUN THE APP ----------
 str = stream()
 str.app()
+
