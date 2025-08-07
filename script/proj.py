@@ -2,9 +2,9 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import StandardScaler,LabelEncoder
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import  classification_report, accuracy_score,RocCurveDisplay,ConfusionMatrixDisplay,confusion_matrix
+from sklearn.metrics import  classification_report, accuracy_score,RocCurveDisplay,ConfusionMatrixDisplay,confusion_matrix,roc_curve
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
 from joblib import load, dump
@@ -24,7 +24,7 @@ class EDA:
         self.file = None
 
     def clean(self):
-        filepath = r"bank.csv"  # add file path
+        filepath = r"bank.csv" # add file path
 
         if os.path.isfile(filepath):
             try:
@@ -54,13 +54,13 @@ class EDA:
         if self.file is not None:
             try:
                 st.title("Save File")
-                st.markdown("<p1 style='color:red;'>Press the given Button Below to Save File </h2>", unsafe_allow_html=True)  
+                st.markdown("<h3 style='color:red;'>Press the given Button Below to Save File </h3>", unsafe_allow_html=True)  
                 
                 st.markdown("""
                                 <style>
 
                                 div.stButton > button:first-child:hover {
-                                    background-color: grey;
+                                    background-color: red;
                                     color: white;
                                     transform: scale(1.08);
                                     cursor: pointer;
@@ -101,6 +101,7 @@ class EDA:
     def visualize(self):
         if self.file is not None:
             def subplot(gr1, gr2, gr3, gr4,gr5):
+                
                 fig1, axes = plt.subplots(nrows=2, ncols=2, figsize=(15, 10))
 
                 sns.barplot(x="loan", y="count", hue="marital", data=gr1, palette="coolwarm", ax=axes[0, 0])
@@ -112,21 +113,24 @@ class EDA:
                 axes[0, 1].set_title("Loan per Job Status", color="purple")
                 axes[1, 0].set_title("Housing per Marital Status", color="purple")
                 axes[1, 1].set_title("Housing per Job Status", color="purple")
-
-                plt.tight_layout()
                 
-                st.title("📈 Visualizations")
-                st.markdown("**1. House and Loan**")
-                st.pyplot(fig1)
-                st.markdown("**2. Total loan count**")
+                st.markdown("<h1 style='text-align: center; color: black;'>📊 Visualizations</h1>",unsafe_allow_html=True)
+                col1,col2=st.columns(2)
 
-                fig2,ax=plt.subplots(figsize=(10,6))
-                fig2.patch.set_facecolor('none')
-                ax.pie(self.gr5.values, labels=self.gr5.index, autopct='%1.1f%%',textprops={"color" : "white"},
-                    wedgeprops={'width': 0.4}, startangle=90, pctdistance=0.75)
-                plt.title("Loan Count Distribution",color="purple",weight="bold",fontsize=15)
+                with col1:
+                    
+                    st.subheader("**1. House and Loan**")
+                    st.pyplot(fig1)
+                    
+                with col2:
+                    
+                    st.subheader("**2. Total loan count**")
+                    fig2,ax=plt.subplots(figsize=(10,6))
+                    # fig2.patch.set_facecolor('none')
+                    ax.pie(self.gr5.values, labels=self.gr5.index, autopct='%1.1f%%',textprops={"color" : "purple"},
+                        wedgeprops={'width': 0.4}, startangle=90, pctdistance=0.75)
 
-                st.pyplot(fig2)
+                    st.pyplot(fig2)
                 
 
             subplot(self.gr1, self.gr2, self.gr3,self.gr4,self.gr5)
@@ -138,7 +142,11 @@ class ML(EDA):
             try:
                 self.file_encoded = pd.get_dummies(self.file, 
                     columns=["job", "marital", "education", "default", "housing", 
-                             "loan", "contact", "month", "poutcome"],dtype=int)
+                             "loan", "contact", "month", "poutcome"],drop_first=True,dtype=int)
+                
+                le=LabelEncoder()
+                self.file_encoded['deposit']=le.fit_transform(self.file_encoded['deposit'])
+                
                 
                 st.title("🛠️ Feature Engineered Data")
                 st.write(self.file_encoded.head())
@@ -181,6 +189,17 @@ class ML(EDA):
                 disp = ConfusionMatrixDisplay(confusion_matrix=cm)
                 disp.plot(ax=ax1)
                 st.pyplot(fig3)
+                
+                if len(set(y_test)) == 2:
+                    st.subheader("ROC Curve")
+                    y_proba = selected_model.predict_proba(x_test)[:, 1]  # Probabilities for class 1
+                    fpr, tpr, _ = roc_curve(y_test, y_proba)
+                    fig4, ax2 = plt.subplots()
+                    roc_disp = RocCurveDisplay(fpr=fpr, tpr=tpr)
+                    roc_disp.plot(ax=ax2)
+                    st.pyplot(fig4)
+                else:
+                    st.warning("ROC Curve is only available for binary classification problems.")
             
                 
             except Exception as e:
@@ -204,6 +223,7 @@ class stream(ML):
 
         
     def app(self):
+
         st.sidebar.title("Model Options")
 
         options = {
@@ -220,4 +240,3 @@ class stream(ML):
 # ---------- RUN THE APP ----------
 str = stream()
 str.app()
-
