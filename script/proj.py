@@ -3,7 +3,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.preprocessing import StandardScaler,LabelEncoder
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import train_test_split,cross_validate
 from sklearn.metrics import  classification_report, accuracy_score,RocCurveDisplay,ConfusionMatrixDisplay,confusion_matrix,roc_curve
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
@@ -24,7 +24,7 @@ class EDA:
         self.file = None
 
     def clean(self):
-        filepath = r"bank.csv" # add file path
+        filepath = r"bank.csv"  #add file location
 
         if os.path.isfile(filepath):
             try:
@@ -54,7 +54,7 @@ class EDA:
         if self.file is not None:
             try:
                 st.title("Save File")
-                st.markdown("<h3 style='color:red;'>Press the given Button Below to Save File </h3>", unsafe_allow_html=True)  
+                st.markdown("<p2 style='color:red;'>Press the given Button Below to Save Clean File </p2>", unsafe_allow_html=True)  
                 
                 st.markdown("""
                                 <style>
@@ -114,7 +114,7 @@ class EDA:
                 axes[1, 0].set_title("Housing per Marital Status", color="purple")
                 axes[1, 1].set_title("Housing per Job Status", color="purple")
                 
-                st.markdown("<h1 style='text-align: center; color: black;'>📊 Visualizations</h1>",unsafe_allow_html=True)
+                st.markdown("<h1 style='text-align: center; color: white;'>📊 Visualizations</h1>",unsafe_allow_html=True)
                 col1,col2=st.columns(2)
 
                 with col1:
@@ -164,51 +164,108 @@ class ML(EDA):
                 models = {
                     "Select":"Select",
                     "Logistic Regression": LogisticRegression(),
-                    "Random Forest": RandomForestClassifier()
+                    "Random Forest": RandomForestClassifier(),
                 }
 
                 st.title("Choose Models")
                 selected_model_name = st.selectbox("Choose any one", list(models.keys()))
 
-                selected_model = models[selected_model_name]
-
-                selected_model.fit(x_train, y_train)
-                pred = selected_model.predict(x_test)
-
-
-                st.write(f"Accuracy: {accuracy_score(y_test, pred):.2f}")
-                report = classification_report(y_test, pred)
-                st.text("Classification Report:")
-                st.text(f"""```
-                {report}
-                ```""")
+                self.selected_model = models[selected_model_name]
                 
-                st.subheader("Confusion Matrix")
-                cm = confusion_matrix(y_test, pred)
-                fig3, ax1 = plt.subplots()
-                disp = ConfusionMatrixDisplay(confusion_matrix=cm)
-                disp.plot(ax=ax1)
-                st.pyplot(fig3)
+                score=cross_validate(self.selected_model,x_train,y_train,scoring=['accuracy','f1','precision'],cv=5)
+                st.markdown("**Validation result**")
+                score=pd.DataFrame(score)
+                st.write(score)
+                st.markdown("**Validation Mean result**")
+                mean_score = score.mean()
+                st.write(mean_score)
                 
-                if len(set(y_test)) == 2:
-                    st.subheader("ROC Curve")
-                    y_proba = selected_model.predict_proba(x_test)[:, 1]  # Probabilities for class 1
-                    fpr, tpr, _ = roc_curve(y_test, y_proba)
-                    fig4, ax2 = plt.subplots()
-                    roc_disp = RocCurveDisplay(fpr=fpr, tpr=tpr)
-                    roc_disp.plot(ax=ax2)
-                    st.pyplot(fig4)
-                else:
-                    st.warning("ROC Curve is only available for binary classification problems.")
+                st.markdown("<h4 style='text-align: center; color: green;'>If Satisfy with the Validation Click Button to see Final Evaluation on Test Data</h4>"
+                    ,unsafe_allow_html=True)
+                
+                
+                st.markdown("""
+                                <style>
+
+                                div.stButton > button:first-child:hover {
+                                    background-color: green;
+                                    color: white;
+                                    transform: scale(1.08);
+                                    cursor: pointer;
+                                }
+                                </style>
+                            """, unsafe_allow_html=True)
+                
+                if st.button("See Result"):
+                    
+                    self.selected_model.fit(x_train, y_train)
+                    pred = self.selected_model.predict(x_test)
+
+
+                    st.write(f"Accuracy: {accuracy_score(y_test, pred):.2f}")
+                    report = classification_report(y_test, pred)
+                    st.text("Classification Report:")
+                    st.text(f"""```
+                    {report}
+                    ```""")
+                    
+                    st.subheader("Confusion Matrix")
+                    cm = confusion_matrix(y_test, pred)
+                    fig3, ax1 = plt.subplots()
+                    cnf_disp = ConfusionMatrixDisplay(confusion_matrix=cm)
+                    cnf_disp.plot(ax=ax1)
+                    st.pyplot(fig3)
+                    
+                    if len(set(y_test)) == 2:
+                        st.subheader("ROC Curve")
+                        y_proba = self.selected_model.predict_proba(x_test)[:, 1]  # Probabilities for class 1
+                        fpr, tpr, _ = roc_curve(y_test, y_proba)
+                        fig4, ax2 = plt.subplots()
+                        roc_disp = RocCurveDisplay(fpr=fpr, tpr=tpr)
+                        roc_disp.plot(ax=ax2)
+                        st.pyplot(fig4)
+                    else:
+                        st.warning("ROC Curve is only available for binary classification problems.")
             
                 
             except Exception as e:
                 logging.error(f"Feature engineering error: {e}")
         else:
             st.warning("Data not available for feature engineering.")
+
+class deployment(ML):
+    
+    def deploy(self):
+        
+        try:
+            st.title("Deployment")
+            
+            st.warning("**Run/choose** the model before Deployment")
+            
+            st.markdown("""
+                <style>
+
+                div.stButton > button:first-child:hover {
+                    background-color: green;
+                    color: white;
+                    transform: scale(1.08);
+                    cursor: pointer;
+                }
+                </style>
+            """, unsafe_allow_html=True)
+            
+            if st.button("Deploy"):
+                
+                dump(self.selected_model,"deploy_bank.joblib")
+                st.success("**Deployment Succesfull**")
+                            
+                
+        except Exception as e:
+            
+            st.warning(e)
             
 
-class stream(ML):
+class stream(deployment):
     
     def run_eda(self):
         self.clean()
@@ -219,6 +276,7 @@ class stream(ML):
     def run_fe_ml(self):
         self.clean()
         self.FE()
+        self.deploy()
 
 
         
