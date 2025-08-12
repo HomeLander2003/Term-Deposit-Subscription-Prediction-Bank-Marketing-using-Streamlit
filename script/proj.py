@@ -24,7 +24,7 @@ class EDA:
         self.file = None
 
     def clean(self):
-        filepath = r"bank.csv"  #add file location
+        filepath = r"bank.csv"
 
         if os.path.isfile(filepath):
             try:
@@ -154,115 +154,87 @@ class ML(EDA):
                 X=self.file_encoded.drop("deposit",axis=1)
                 y=self.file_encoded["deposit"]
                 
-                x_train, x_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=101)
+                self.x_train, self.x_test, self.y_train, self.y_test = train_test_split(X, y, test_size=0.3, random_state=101)
                 
                 scaler=StandardScaler()
-                x_train=scaler.fit_transform(x_train)
-                x_test=scaler.transform(x_test)
-                
-                
-                models = {
-                    "Select":"Select",
-                    "Logistic Regression": LogisticRegression(),
-                    "Random Forest": RandomForestClassifier(),
-                }
-
-                st.title("Choose Models")
-                selected_model_name = st.selectbox("Choose any one", list(models.keys()))
-
-                self.selected_model = models[selected_model_name]
-                
-                score=cross_validate(self.selected_model,x_train,y_train,scoring=['accuracy','f1','precision'],cv=5)
-                st.markdown("**Validation result**")
-                score=pd.DataFrame(score)
-                st.write(score)
-                st.markdown("**Validation Mean result**")
-                mean_score = score.mean()
-                st.write(mean_score)
-                
-                st.markdown("<h4 style='text-align: center; color: green;'>If Satisfy with the Validation Click Button to see Final Evaluation on Test Data</h4>"
-                    ,unsafe_allow_html=True)
-                
-                
-                st.markdown("""
-                                <style>
-
-                                div.stButton > button:first-child:hover {
-                                    background-color: green;
-                                    color: white;
-                                    transform: scale(1.08);
-                                    cursor: pointer;
-                                }
-                                </style>
-                            """, unsafe_allow_html=True)
-                
-                if st.button("See Result"):
-                    
-                    self.selected_model.fit(x_train, y_train)
-                    pred = self.selected_model.predict(x_test)
-
-
-                    st.write(f"Accuracy: {accuracy_score(y_test, pred):.2f}")
-                    report = classification_report(y_test, pred)
-                    st.text("Classification Report:")
-                    st.text(f"""```
-                    {report}
-                    ```""")
-                    
-                    st.subheader("Confusion Matrix")
-                    cm = confusion_matrix(y_test, pred)
-                    fig3, ax1 = plt.subplots()
-                    cnf_disp = ConfusionMatrixDisplay(confusion_matrix=cm)
-                    cnf_disp.plot(ax=ax1)
-                    st.pyplot(fig3)
-                    
-                    if len(set(y_test)) == 2:
-                        st.subheader("ROC Curve")
-                        y_proba = self.selected_model.predict_proba(x_test)[:, 1]  # Probabilities for class 1
-                        fpr, tpr, _ = roc_curve(y_test, y_proba)
-                        fig4, ax2 = plt.subplots()
-                        roc_disp = RocCurveDisplay(fpr=fpr, tpr=tpr)
-                        roc_disp.plot(ax=ax2)
-                        st.pyplot(fig4)
-                    else:
-                        st.warning("ROC Curve is only available for binary classification problems.")
-            
+                self.x_train=scaler.fit_transform(self.x_train)
+                self.x_test=scaler.transform(self.x_test)
                 
             except Exception as e:
                 logging.error(f"Feature engineering error: {e}")
         else:
             st.warning("Data not available for feature engineering.")
 
-class deployment(ML):
-    
-    def deploy(self):
-        
+                
+    def ml(self):
         try:
-            st.title("Deployment")
+            self.model_trained = False  # default to False before running
             
-            st.warning("**Run/choose** the model before Deployment")
-            
-            st.markdown("""
-                <style>
+            models = {
+                "Select": None,
+                "Logistic Regression": LogisticRegression(),
+                "Random Forest": RandomForestClassifier(),
+            }
 
-                div.stButton > button:first-child:hover {
-                    background-color: green;
-                    color: white;
-                    transform: scale(1.08);
-                    cursor: pointer;
-                }
-                </style>
-            """, unsafe_allow_html=True)
-            
-            if st.button("Deploy"):
-                
-                dump(self.selected_model,"deploy_bank.joblib")
-                st.success("**Deployment Succesfull**")
-                            
-                
+            st.title("Choose Models")
+            selected_model_name = st.selectbox("Choose any one", list(models.keys()))
+            self.selected_model = models[selected_model_name]
+
+            if self.selected_model is None:
+                st.warning("Please select a valid model.")
+                return  # stop here if 'Select' is chosen
+
+            score = cross_validate(self.selected_model, self.x_train, self.y_train,scoring=['accuracy', 'f1', 'precision'], cv=5)
+            st.markdown("**Validation result**")
+            score = pd.DataFrame(score)
+            st.write(score)
+
+            st.markdown("**Validation Mean result**")
+            st.write(score.mean())
+
+            if st.button("See Result"):
+                self.selected_model.fit(self.x_train, self.y_train)
+                pred = self.selected_model.predict(self.x_test)
+
+                st.write(f"Accuracy: {accuracy_score(self.y_test, pred):.2f}")
+                st.text("Classification Report:")
+                st.text(classification_report(self.y_test, pred))
+
+                st.subheader("Confusion Matrix")
+                fig3, ax1 = plt.subplots()
+                ConfusionMatrixDisplay(confusion_matrix=confusion_matrix(self.y_test, pred)).plot(ax=ax1)
+                st.pyplot(fig3)
+
+                if len(set(self.y_test)) == 2:
+                    st.subheader("ROC Curve")
+                    y_proba = self.selected_model.predict_proba(self.x_test)[:, 1]
+                    fpr, tpr, _ = roc_curve(self.y_test, y_proba)
+                    fig4, ax2 = plt.subplots()
+                    RocCurveDisplay(fpr=fpr, tpr=tpr).plot(ax=ax2)
+                    st.pyplot(fig4)
+
+                # ✅ Model trained successfully
+                self.model_trained = True
+
         except Exception as e:
-            
+            st.error(e)
+
+class deployment(ML):     
+                   
+    def deploy(self):
+        try:
+            if not hasattr(self, 'model_trained') or not self.model_trained:
+                st.warning("Please run the ML model before deploying.")
+                return
+
+            st.title("Deployment")
+            if st.button("Deploy"):
+                dump(self.selected_model, "deploy_bank.joblib")
+                st.success("Deployment Successful")
+
+        except Exception as e:
             st.warning(e)
+
             
 
 class stream(deployment):
@@ -276,9 +248,10 @@ class stream(deployment):
     def run_fe_ml(self):
         self.clean()
         self.FE()
+        self.ml()
         self.deploy()
-
-
+        
+        
         
     def app(self):
 
