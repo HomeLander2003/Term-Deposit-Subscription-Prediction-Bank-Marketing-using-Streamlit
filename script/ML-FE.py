@@ -1,4 +1,33 @@
-            
+class ML():
+    def FE(self):
+        if self.file is not None:
+            try:
+                self.file_encoded = pd.get_dummies(self.file, 
+                    columns=["job", "marital", "education", "default", "housing", 
+                             "loan", "contact", "month", "poutcome"],drop_first=True,dtype=int)
+                
+                le=LabelEncoder()
+                self.file_encoded['deposit']=le.fit_transform(self.file_encoded['deposit'])
+                
+                
+                st.title("🛠️ Feature Engineered Data")
+                st.write(self.file_encoded.head())
+                            
+                X=self.file_encoded.drop("deposit",axis=1)
+                y=self.file_encoded["deposit"]
+                
+                self.x_train, self.x_test, self.y_train, self.y_test = train_test_split(X, y, test_size=0.3, random_state=101)
+                
+                scaler=StandardScaler()
+                self.x_train=scaler.fit_transform(self.x_train)
+                self.x_test=scaler.transform(self.x_test)
+                
+            except Exception as e:
+                logging.error(f"Feature engineering error: {e}")
+        else:
+            st.warning("Data not available for feature engineering.")
+
+                
     def ml(self):
         try:
             self.model_trained = False  # default to False before running
@@ -24,6 +53,20 @@
 
             st.markdown("**Validation Mean result**")
             st.write(score.mean())
+            
+            st.markdown("""
+                                <style>
+
+                                div.stButton > button:first-child:hover {
+                                    background-color: green;
+                                    color: white;
+                                    transform: scale(1.1);
+                                    cursor: pointer;
+                                }
+                                </style>
+                            """, unsafe_allow_html=True)
+            
+            st.markdown("<h3 style='color:green;'>Check Evaluation on Test Data </h3>", unsafe_allow_html=True)  
 
             if st.button("See Result"):
                 self.selected_model.fit(self.x_train, self.y_train)
@@ -48,6 +91,8 @@
 
                 # ✅ Model trained successfully
                 self.model_trained = True
+                st.session_state.model_trained = True
+
 
         except Exception as e:
             st.error(e)
