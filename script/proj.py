@@ -191,6 +191,20 @@ class ML(EDA):
 
             st.markdown("**Validation Mean result**")
             st.write(score.mean())
+            
+            st.markdown("""
+                                <style>
+
+                                div.stButton > button:first-child:hover {
+                                    background-color: green;
+                                    color: white;
+                                    transform: scale(1.1);
+                                    cursor: pointer;
+                                }
+                                </style>
+                            """, unsafe_allow_html=True)
+            
+            st.markdown("<h3 style='color:green;'>Check Evaluation on Test Data </h3>", unsafe_allow_html=True)  
 
             if st.button("See Result"):
                 self.selected_model.fit(self.x_train, self.y_train)
@@ -215,27 +229,58 @@ class ML(EDA):
 
                 # ✅ Model trained successfully
                 self.model_trained = True
+                st.session_state.model_trained = True
+
 
         except Exception as e:
             st.error(e)
-
+            
 class deployment(ML):     
-                   
+
+    def check_deploy(self):
+        """Check if the ML model is trained before deployment."""
+        try:
+            if "model_trained" not in st.session_state:
+                st.session_state.model_trained = False
+
+            if not st.session_state.model_trained:
+                st.warning("Please run the ML model before deploying.")
+                return False
+            return True
+        except Exception as e:
+            st.warning(e)
+            return False
+            
     def deploy(self):
         try:
-            if not hasattr(self, 'model_trained') or not self.model_trained:
-                st.warning("Please run the ML model before deploying.")
-                return
+            if "deploy_done" not in st.session_state:
+                st.session_state.deploy_done = False
+                
+                st.markdown("""
+                                <style>
+
+                                div.stButton > button:first-child:hover {
+                                    background-color: green;
+                                    color: white;
+                                    transform: scale(1.1);
+                                    cursor: pointer;
+                                }
+                                </style>
+                            """, unsafe_allow_html=True)
 
             st.title("Deployment")
-            if st.button("Deploy"):
-                dump(self.selected_model, "deploy_bank.joblib")
-                st.success("Deployment Successful")
-
+            if not st.session_state.deploy_done:
+                if st.button("Deploy"):
+                    dump(self.selected_model, "deploy_bank.joblib")
+                    st.session_state.deploy_done = True
+                    st.success("Deployment Successful ✅")
+            else:
+                st.success("Model already deployed!")
         except Exception as e:
             st.warning(e)
 
-            
+
+        
 
 class stream(deployment):
     
@@ -249,8 +294,8 @@ class stream(deployment):
         self.clean()
         self.FE()
         self.ml()
-        self.deploy()
-        
+        if self.check_deploy():
+            self.deploy()
         
         
     def app(self):
