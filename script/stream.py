@@ -1,4 +1,3 @@
-
 class stream(deployment):
     
     def run_eda(self):
@@ -10,9 +9,10 @@ class stream(deployment):
     def run_fe_ml(self):
         self.clean()
         self.FE()
-        self.deploy()
-
-
+        self.ml()
+        if self.check_deploy():
+            self.deploy()
+        
         
     def app(self):
 
