@@ -3,11 +3,11 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.preprocessing import StandardScaler,LabelEncoder
-from sklearn.model_selection import train_test_split,cross_validate
-from sklearn.metrics import  classification_report, accuracy_score,RocCurveDisplay,ConfusionMatrixDisplay,confusion_matrix,roc_curve
+from sklearn.model_selection import train_test_split,cross_validate,GridSearchCV
+from sklearn.metrics import  classification_report, accuracy_score,RocCurveDisplay,ConfusionMatrixDisplay,confusion_matrix,roc_curve,roc_auc_score
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
-from joblib import load, dump
+from joblib import dump
 import streamlit as st
 import logging
 import os
@@ -172,7 +172,7 @@ class ML(EDA):
             
             models = {
                 "Select": None,
-                "Logistic Regression": LogisticRegression(),
+                "Logistic Regression": LogisticRegression(solver="saga",max_iter=5000),
                 "Random Forest": RandomForestClassifier(),
             }
 
@@ -192,6 +192,7 @@ class ML(EDA):
             st.markdown("**Validation Mean result**")
             st.write(score.mean())
             
+            
             st.markdown("""
                                 <style>
 
@@ -207,8 +208,27 @@ class ML(EDA):
             st.markdown("<h3 style='color:green;'>Check Evaluation on Test Data </h3>", unsafe_allow_html=True)  
 
             if st.button("See Result"):
-                self.selected_model.fit(self.x_train, self.y_train)
-                pred = self.selected_model.predict(self.x_test)
+    
+                if selected_model_name == "Logistic Regression":
+                    
+                    para = {
+                        "penalty": ["l1", "l2"],
+                        "C": np.logspace(0, 1, 10)
+                    }
+                    
+                    grid_model = GridSearchCV(
+                        estimator=LogisticRegression(solver="saga", max_iter=5000),
+                        param_grid=para,
+                        cv=5
+                    )
+                    
+                    grid_model.fit(self.x_train, self.y_train)
+                    self.selected_model = grid_model.best_estimator_
+                    pred = self.selected_model.predict(self.x_test)
+                
+                else:
+                    self.selected_model.fit(self.x_train, self.y_train)
+                    pred = self.selected_model.predict(self.x_test)
 
                 st.write(f"Accuracy: {accuracy_score(self.y_test, pred):.2f}")
                 st.text("Classification Report:")
@@ -222,10 +242,14 @@ class ML(EDA):
                 if len(set(self.y_test)) == 2:
                     st.subheader("ROC Curve")
                     y_proba = self.selected_model.predict_proba(self.x_test)[:, 1]
-                    fpr, tpr, _ = roc_curve(self.y_test, y_proba)
-                    fig4, ax2 = plt.subplots()
-                    RocCurveDisplay(fpr=fpr, tpr=tpr).plot(ax=ax2)
+                    
+                    fig4,ax2=plt.subplots(figsize=(10,6))
+                    RocCurveDisplay.from_predictions(y_true=self.y_test,y_pred=y_proba,ax=ax2)
                     st.pyplot(fig4)
+
+                self.model_trained = True
+                st.session_state.model_trained = True
+
 
                 # ✅ Model trained successfully
                 self.model_trained = True
