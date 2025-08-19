@@ -7,10 +7,12 @@ from sklearn.model_selection import train_test_split,cross_validate,GridSearchCV
 from sklearn.metrics import  classification_report, accuracy_score,RocCurveDisplay,ConfusionMatrixDisplay,confusion_matrix,roc_curve,roc_auc_score
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.neighbors import KNeighborsClassifier
 from joblib import dump
 import streamlit as st
 import logging
 import os
+import time
 
 # Logging configuration
 logging.basicConfig(
@@ -29,7 +31,14 @@ class EDA:
         if os.path.isfile(filepath):
             try:
                 self.file = pd.read_csv(filepath)
+                
+                info=st.empty()
+                info.success("Data Load Successfully")
+                time.sleep(1.35)
+                info.empty()
+                
                 st.title("Dataset Preview")
+                
                 st.write(self.file.head())
 
                 if self.file.isnull().any(axis=1).sum() > 0:
@@ -172,11 +181,12 @@ class ML(EDA):
             
             models = {
                 "Select": None,
-                "Logistic Regression": LogisticRegression(solver="saga",max_iter=5000),
+                "Logistic Regression": LogisticRegression(),
                 "Random Forest": RandomForestClassifier(),
+                "KNN":KNeighborsClassifier()
             }
 
-            st.title("Choose Models")
+            st.title("Choose Model")
             selected_model_name = st.selectbox("Choose any one", list(models.keys()))
             self.selected_model = models[selected_model_name]
 
@@ -216,15 +226,22 @@ class ML(EDA):
                         "C": np.logspace(0, 1, 10)
                     }
                     
-                    grid_model = GridSearchCV(
-                        estimator=LogisticRegression(solver="saga", max_iter=5000),
-                        param_grid=para,
-                        cv=5
-                    )
+                    grid_model1 = GridSearchCV(estimator=LogisticRegression(solver="saga", max_iter=5000),param_grid=para,cv=5)
                     
-                    grid_model.fit(self.x_train, self.y_train)
-                    self.selected_model = grid_model.best_estimator_
+                    grid_model1.fit(self.x_train, self.y_train)
+                    self.selected_model = grid_model1.best_estimator_
                     pred = self.selected_model.predict(self.x_test)
+                    
+                if selected_model_name=="KNN":
+                    
+                    para={"n_neighbors":list(range(1,30)),
+                          "metric":["euclidean","minkowski"]}
+                    
+                    grid_model2=GridSearchCV(estimator=KNeighborsClassifier(),param_grid=para,cv=5)
+                    grid_model2.fit(self.x_train,self.y_train)
+                    self.selected_model = grid_model2.best_estimator_
+                    pred = self.selected_model.predict(self.x_test)                    
+                    
                 
                 else:
                     self.selected_model.fit(self.x_train, self.y_train)
@@ -295,6 +312,14 @@ class deployment(ML):
             st.title("Deployment")
             if not st.session_state.deploy_done:
                 if st.button("Deploy"):
+                    
+                    with st.spinner("Checking Model..."):
+                        time.sleep(1)
+                    with st.spinner("Collecting Information..."):
+                        time.sleep(1)
+                    with st.spinner("Deploying..."):
+                        time.sleep(1)
+                    
                     dump(self.selected_model, "deploy_bank.joblib")
                     st.session_state.deploy_done = True
                     st.success("Deployment Successful ✅")
@@ -323,17 +348,31 @@ class stream(deployment):
         
         
     def app(self):
+        
 
-        st.sidebar.title("Model Options")
+        st.sidebar.title("Choose Options")
 
         options = {
             "EDA ":self.run_eda,
             "FE + ML": self.run_fe_ml
         }
 
-        opt_name = st.sidebar.selectbox("Choose Options", list(options.keys()))
+        opt_name = st.sidebar.selectbox("select", list(options.keys()))
         selected_opt = options[opt_name]
         selected_opt()  
+        
+        st.sidebar.title("DataSet Link :")
+        st.sidebar.link_button("Click Here", "https://www.kaggle.com/datasets/janiobachmann/bank-marketing-dataset")
+        
+        st.sidebar.title("Rate My Work")
+        rating = st.sidebar.slider("Rate from 1 to 3", 1, 3, 2)
+
+        labels = {1: "Need Improvement", 2: "Average", 3: "Outstanding"}
+        st.sidebar.write("You selected:", labels[rating])
+        
+        
+        st.sidebar.title("FeedBack")
+        feedback = st.sidebar.text_area("Tell me how I can improve:")
 
 
 
