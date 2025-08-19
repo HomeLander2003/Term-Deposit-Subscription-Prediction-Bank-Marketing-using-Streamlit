@@ -1,4 +1,5 @@
-class deployment(ML):     
+            
+class deployment():     
 
     def check_deploy(self):
         """Check if the ML model is trained before deployment."""
@@ -34,6 +35,14 @@ class deployment(ML):
             st.title("Deployment")
             if not st.session_state.deploy_done:
                 if st.button("Deploy"):
+                    
+                    with st.spinner("Checking Model..."):
+                        time.sleep(1)
+                    with st.spinner("Collecting Information..."):
+                        time.sleep(1)
+                    with st.spinner("Deploying..."):
+                        time.sleep(1)
+                    
                     dump(self.selected_model, "deploy_bank.joblib")
                     st.session_state.deploy_done = True
                     st.success("Deployment Successful ✅")
