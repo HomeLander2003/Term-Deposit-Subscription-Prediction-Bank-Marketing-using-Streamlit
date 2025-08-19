@@ -36,9 +36,10 @@ class ML():
                 "Select": None,
                 "Logistic Regression": LogisticRegression(),
                 "Random Forest": RandomForestClassifier(),
+                "KNN":KNeighborsClassifier()
             }
 
-            st.title("Choose Models")
+            st.title("Choose Model")
             selected_model_name = st.selectbox("Choose any one", list(models.keys()))
             self.selected_model = models[selected_model_name]
 
@@ -53,6 +54,7 @@ class ML():
 
             st.markdown("**Validation Mean result**")
             st.write(score.mean())
+            
             
             st.markdown("""
                                 <style>
@@ -69,8 +71,34 @@ class ML():
             st.markdown("<h3 style='color:green;'>Check Evaluation on Test Data </h3>", unsafe_allow_html=True)  
 
             if st.button("See Result"):
-                self.selected_model.fit(self.x_train, self.y_train)
-                pred = self.selected_model.predict(self.x_test)
+    
+                if selected_model_name == "Logistic Regression":
+                    
+                    para = {
+                        "penalty": ["l1", "l2"],
+                        "C": np.logspace(0, 1, 10)
+                    }
+                    
+                    grid_model1 = GridSearchCV(estimator=LogisticRegression(solver="saga", max_iter=5000),param_grid=para,cv=5)
+                    
+                    grid_model1.fit(self.x_train, self.y_train)
+                    self.selected_model = grid_model1.best_estimator_
+                    pred = self.selected_model.predict(self.x_test)
+                    
+                if selected_model_name=="KNN":
+                    
+                    para={"n_neighbors":list(range(1,30)),
+                          "metric":["euclidean","minkowski"]}
+                    
+                    grid_model2=GridSearchCV(estimator=KNeighborsClassifier(),param_grid=para,cv=5)
+                    grid_model2.fit(self.x_train,self.y_train)
+                    self.selected_model = grid_model2.best_estimator_
+                    pred = self.selected_model.predict(self.x_test)                    
+                    
+                
+                else:
+                    self.selected_model.fit(self.x_train, self.y_train)
+                    pred = self.selected_model.predict(self.x_test)
 
                 st.write(f"Accuracy: {accuracy_score(self.y_test, pred):.2f}")
                 st.text("Classification Report:")
@@ -84,10 +112,14 @@ class ML():
                 if len(set(self.y_test)) == 2:
                     st.subheader("ROC Curve")
                     y_proba = self.selected_model.predict_proba(self.x_test)[:, 1]
-                    fpr, tpr, _ = roc_curve(self.y_test, y_proba)
-                    fig4, ax2 = plt.subplots()
-                    RocCurveDisplay(fpr=fpr, tpr=tpr).plot(ax=ax2)
+                    
+                    fig4,ax2=plt.subplots(figsize=(10,6))
+                    RocCurveDisplay.from_predictions(y_true=self.y_test,y_pred=y_proba,ax=ax2)
                     st.pyplot(fig4)
+
+                self.model_trained = True
+                st.session_state.model_trained = True
+
 
                 # ✅ Model trained successfully
                 self.model_trained = True
