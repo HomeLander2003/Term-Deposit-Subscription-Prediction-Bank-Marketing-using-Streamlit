@@ -92,7 +92,7 @@ class EDA:
         if self.file is not None:
             try:
                 st.title("📊 Descriptive Statistics")
-                st.write(self.file.describe())
+                st.dataframe(self.file.describe().T.style.background_gradient(cmap="Blues"))
 
                 self.gr1 = self.file.groupby("loan")["marital"].value_counts().reset_index(name="count")
                 self.gr2 = self.file.groupby("loan")["job"].value_counts().reset_index(name="count")
@@ -197,10 +197,10 @@ class ML(EDA):
             score = cross_validate(self.selected_model, self.x_train, self.y_train,scoring=['accuracy', 'f1', 'precision'], cv=5)
             st.markdown("**Validation result**")
             score = pd.DataFrame(score)
-            st.write(score)
+            st.dataframe(score.T.style.background_gradient(cmap="Greens"))
 
             st.markdown("**Validation Mean result**")
-            st.write(score.mean())
+            st.dataframe(score.mean())
             
             
             st.markdown("""
@@ -328,10 +328,26 @@ class deployment(ML):
         except Exception as e:
             st.warning(e)
 
-
+class feedback(deployment):
+    
+    def feed(self):
         
+        st.title("Rate My Work")
+        rating = st.slider("Rate from 1 to 3", 1, 3, 2)
 
-class stream(deployment):
+        labels = {1: "Need Improvement", 2: "Average", 3: "Outstanding"}
+        st.write("You selected:", labels[rating])
+        
+        
+        st.title("FeedBack")
+        feedback = st.text_area("Tell me how I can improve:")
+        
+        if st.button("Submit feedback"):
+            
+            st.success("Feedback Saved......")
+            st.balloons()
+            
+class stream(feedback):
     
     def run_eda(self):
         self.clean()
@@ -345,16 +361,26 @@ class stream(deployment):
         self.ml()
         if self.check_deploy():
             self.deploy()
+    
+    def run_feed(self):
         
+        self.feed()
         
     def app(self):
         
+        light_mode = st.sidebar.toggle("Bg Mode")
 
+        if light_mode:
+            st.sidebar.write("🌞 Light Mode is ON")
+        else:
+            st.sidebar.write("🌙 Dark Mode is ON")
+            
         st.sidebar.title("Choose Options")
 
         options = {
             "EDA ":self.run_eda,
-            "FE + ML": self.run_fe_ml
+            "FE + ML": self.run_fe_ml,
+            "Feed Back":self.run_feed
         }
 
         opt_name = st.sidebar.selectbox("select", list(options.keys()))
@@ -363,16 +389,6 @@ class stream(deployment):
         
         st.sidebar.title("DataSet Link :")
         st.sidebar.link_button("Click Here", "https://www.kaggle.com/datasets/janiobachmann/bank-marketing-dataset")
-        
-        st.sidebar.title("Rate My Work")
-        rating = st.sidebar.slider("Rate from 1 to 3", 1, 3, 2)
-
-        labels = {1: "Need Improvement", 2: "Average", 3: "Outstanding"}
-        st.sidebar.write("You selected:", labels[rating])
-        
-        
-        st.sidebar.title("FeedBack")
-        feedback = st.sidebar.text_area("Tell me how I can improve:")
 
 
 
