@@ -1,136 +1,71 @@
-# Term-Deposit-Subscription-Prediction-Bank-Marketing-using-Streamlit
+**📊 Bank Marketing ML Web App******
 
- Streamlit-based end-to-end machine learning application for data cleaning, exploratory data analysis (EDA), feature engineering, model training, evaluation, and deployment using a bank dataset.
+An interactive Streamlit application for data analysis, machine learning, and deployment built using the Bank Marketing Dataset
+.
+This project automates the end-to-end data science workflow — from data cleaning, exploratory analysis, feature engineering, model training, evaluation, deployment, and user feedback.
 
-Here’s a breakdown of its components and functionality:
+🔹 Features
 
-1. Libraries Used
-Data Handling & Analysis: numpy, pandas
+✅ Data Cleaning – Removes null values & duplicates automatically
+✅ EDA & Visualization – Descriptive statistics, grouped analysis & interactive charts
+✅ Feature Engineering – One-hot encoding, label encoding, and scaling
+✅ ML Models – Logistic Regression, Random Forest, KNN, and SVM
+✅ Hyperparameter Tuning – GridSearchCV integration for best parameters
+✅ Model Evaluation – Accuracy, Precision, F1-score, ROC, Confusion Matrix
+✅ Deployment – Save trained model as .joblib for reuse
+✅ User Feedback – Rate app performance and provide improvement suggestions
+✅ Dark/Light Mode – Sidebar toggle for better user experience
 
-Visualization: matplotlib, seaborn
+**📷 App Workflow**
 
-ML Preprocessing: StandardScaler, LabelEncoder
+1.EDA Module
 
-Model Selection & Evaluation: train_test_split, cross_validate, classification metrics
+Loads dataset, removes nulls & duplicates
 
-Models: LogisticRegression, RandomForestClassifier
+Shows dataset preview, summary statistics
 
-Model Saving/Loading: joblib
+Visualizes insights with bar charts & pie charts
 
-UI: streamlit
+2.Feature Engineering + Machine Learning
 
-Logging & File Handling: logging, os
+Encodes categorical variables
 
-2. Class Structure
-Class: EDA
-Handles data cleaning, saving, descriptive analysis, and visualizations.
+Splits into train/test sets & scales features
 
-Methods:
-clean()
+Trains ML models with cross-validation
 
-Loads the CSV file from a specified path (bank.csv)
+Displays validation results & test performance
 
-Removes null values and duplicates (with Streamlit notifications)
+3.Deployment
 
-Displays the dataset preview
+Exports trained ML model as deploy_bank.joblib
 
-save()
+Prevents redeployment if already deployed
 
-Saves the cleaned data as bank_mod.csv when a button is clicked
+4.Feedback Section
 
-analysis()
+Allows users to rate (1–3 scale)
 
-Generates grouped summaries for combinations of categorical variables (loan, marital, job, housing)
+Submit improvement suggestions
 
-Stores them for later visualization
+**🛠️ Tech Stack**
 
-visualize()
+Python
 
-Displays bar plots (loan vs marital/job, housing vs marital/job)
+Pandas, NumPy – Data manipulation
 
-Displays pie chart for total loan count
+Matplotlib, Seaborn – Visualization
 
-Class: ML (inherits EDA)
-Handles feature engineering, model training, validation, and testing.
+Scikit-Learn – ML models, preprocessing, metrics
 
-Methods:
-FE()
+Streamlit – Interactive web app
 
-Applies One-Hot Encoding to categorical columns
+Joblib – Model deployment
 
-Encodes the target (deposit) with LabelEncoder
+**📢 Feedback**
+💡 Your feedback helps improve this project!
+You can rate the app and provide suggestions directly inside the web app.
 
-Splits the data into train/test sets (70/30)
+Allows users to rate (1–3 scale)
 
-Scales features using StandardScaler
-
-Lets the user choose between Logistic Regression and Random Forest
-
-Performs 5-fold cross-validation (accuracy, f1, precision) and shows mean scores
-
-On button click, trains the chosen model, evaluates on test data, and shows:
-
-Accuracy
-
-Classification report
-
-Confusion matrix
-
-ROC curve (for binary classification)
-
-Class: deployment (inherits ML)
-Handles saving the trained model.
-
-Method:
-deploy()
-
-Saves the selected trained model as deploy_bank.joblib for future use.
-
-Class: stream (inherits deployment)
-The main application controller for Streamlit UI.
-
-Methods:
-run_eda() → Runs the cleaning, saving, analysis, and visualization steps
-
-run_fe_ml() → Runs cleaning, feature engineering, ML training, and deployment
-
-app() → Creates a sidebar menu in Streamlit for user to choose:
-
-EDA
-
-FE + ML
-and executes the corresponding workflow
-
-3. Application Flow
-Sidebar Menu → User selects EDA or FE + ML
-
-EDA Option:
-
-Load & clean data
-
-Save cleaned file
-
-Perform grouped analysis
-
-Show visualizations
-
-FE + ML Option:
-
-Load & clean data
-
-Feature engineer
-
-Model selection + cross-validation
-
-Test evaluation (classification metrics, confusion matrix, ROC curve)
-
-Deploy model if desired
-
-4. Key Features
-✅ Complete ML Pipeline: From raw CSV to deployed model
-✅ Interactive UI with Streamlit
-✅ EDA Visualizations: Bar plots & pie charts
-✅ Automatic Data Cleaning (null & duplicate removal)
-✅ Cross-Validation & Final Testing
-✅ Model Deployment (joblib format)
-✅ Custom Button Styling via inline CSS
+Submit improvement suggestions
