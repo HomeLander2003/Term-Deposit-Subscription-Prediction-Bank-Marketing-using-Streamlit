@@ -1,4 +1,4 @@
-**📊 Bank Marketing ML Web App******
+**📊 Bank Marketing ML Web App**
 
 An interactive Streamlit application for data analysis, machine learning, and deployment built using the Bank Marketing Dataset
 .
@@ -62,7 +62,9 @@ Streamlit – Interactive web app
 
 Joblib – Model deployment
 
+
 **📢 Feedback**
+
 💡 Your feedback helps improve this project!
 You can rate the app and provide suggestions directly inside the web app.
 
